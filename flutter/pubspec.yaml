@@ -19,7 +19,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.3.6+55
 
 environment:
-  sdk: '^3.1.0'
+  sdk: "^3.1.0"
 
 dependencies:
   flutter:
@@ -27,6 +27,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 
+  flutter_flavorizr: ^2.2.3
   ffi: ^2.1.0
   path_provider: ^2.1.1
   external_path: ^1.0.3
@@ -35,7 +36,7 @@ dependencies:
   wakelock_plus: ^1.1.3
   #firebase_analytics: ^9.1.5
   package_info_plus: ^4.2.0
-  url_launcher: ^6.3.1
+  url_launcher: ^6.2.1
   url_launcher_ios: ^6.3.2
   toggle_switch: ^2.1.0
   dash_chat_2:
@@ -106,7 +107,7 @@ dependencies:
   device_info_plus: ^9.1.0
   qr_flutter: ^4.1.0
   extended_text: 14.0.0
-
+  flutter_dotenv: ^5.2.1
 dev_dependencies:
   icons_launcher: ^2.0.4
   #flutter_test:
@@ -115,10 +116,11 @@ dev_dependencies:
   freezed: ^2.4.2
   flutter_lints: ^2.0.2
   ffigen: ^8.0.2
+  package_rename: ^1.7.1
 
 dependency_overrides:
   intl: ^0.19.0
-  
+
 # rerun: flutter pub run flutter_launcher_icons
 flutter_icons:
   image_path: "../res/icon.png"
@@ -128,7 +130,6 @@ flutter_icons:
   windows:
     generate: true
   macos:
-    image_path: "../res/mac-icon.png"
     generate: true
   linux: true
   web:
@@ -187,4 +188,29 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+flavorizr:
+  ide: "vscode"
+  flavors:
+    member:
+      app:
+        name: "HanaDesk"
+      # android:
+      #   applicationId: "com.hanasis.hanadesk"
+      # ios:
+      #   bundleId: "com.hanasis.hanadesk"
+      # macos:
+      #   bundleId: "com.hanasis.hanadesk"
+      windows:
+        product_name: "HanaDesk"
 
+    cs:
+      app:
+        name: "HanaDeskCS"
+      # android:
+      #   applicationId: "com.hanasis.hanadesk.cs"
+      # ios:
+      #   bundleId: "com.hanasis.hanadesk.cs"
+      # macos:
+      #   bundleId: "com.hanasis.hanadesk.cs"
+      windows:
+        product_name: "HanaDeskCS"

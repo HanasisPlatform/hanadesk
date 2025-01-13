@@ -6,19 +6,19 @@
 		<!-- Regs for shortcuts are defined in "Fragments/ShortcutProperties.wxs" -->
 		<!-- Component that persists the property values to the registry so they are available during an upgrade/modify -->
 		<DirectoryRef Id="INSTALLFOLDER_INNER">
-			<Component Id="Product.Registry.InstallFolder" Guid="3196EDA7-9AEF-4705-A0C8-E3F3ECCCB153">
+			<Component Id="Product.Registry.InstallFolder" Guid="811c4c61-a9b1-429a-9dc2-96f5ca941140">
 				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)">
 					<RegistryValue Type="string" Name="INSTALLFOLDER" Value="[INSTALLFOLDER_INNER]" />
 				</RegistryKey>
 			</Component>
 
-			<Component Id="Product.Registry.DefaultIcon" Guid="6DBF2690-0955-4C6A-940F-634DDA503F49">
+			<Component Id="Product.Registry.DefaultIcon" Guid="51dc4b44-e136-433e-bf68-5d6cebe74af3">
 				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\DefaultIcon">
 					<RegistryValue Type="string" Value='"[INSTALLFOLDER_INNER]$(var.Product).exe",0' />
 				</RegistryKey>
 			</Component>
 
-			<Component Id="Product.Registry.CommandPlay" Guid="613C9E4F-2F1F-45A3-96E2-26EBBEBA6B0E">
+			<Component Id="Product.Registry.CommandPlay" Guid="3b5ff7ee-4785-41c7-a678-0ea7e48576a7">
 				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\shell" />
 				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\shell\open" />
 				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\shell\open\command">
@@ -26,13 +26,13 @@
 				</RegistryKey>
 			</Component>
 
-			<Component Id="Product.Registry.URLProtocol" Guid="565BE3F8-23A7-4B9D-B0DE-6D51CC86FC0B">
+			<Component Id="Product.Registry.URLProtocol" Guid="6a4b387e-30bf-48d7-946e-fd56f7370c1b">
 				<RegistryKey Root="HKCR" Key="$(var.ProductLower)">
 					<RegistryValue Type="string" Name="URL Protocol" Value="" />
 				</RegistryKey>
 			</Component>
 
-			<Component Id="Product.Registry.Command" Guid="BC8D581C-5960-4843-93DC-E347CD43BD49">
+			<Component Id="Product.Registry.Command" Guid="af407907-a8bf-433c-9387-5265144c3171">
 				<RegistryKey Root="HKCR" Key="$(var.ProductLower)\shell" />
 				<RegistryKey Root="HKCR" Key="$(var.ProductLower)\shell\open" />
 				<RegistryKey Root="HKCR" Key="$(var.ProductLower)\shell\open\command">
@@ -41,12 +41,35 @@
 			</Component>
 
 			<!--For compatibility with registry values from previous versions-->
-			<Component Id="Product.Registry.UninstallApp" Guid="FC1A3D2E-5642-FBD8-CFA6-5ECAC6DE69A8">
+			<Component Id="Product.Registry.UninstallApp" Guid="f591a836-5f6d-43cf-9c03-0a9fe1bf3622">
 				<RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\$(var.Product)" >
 					<RegistryValue Type="string" Name="BuildDate" Value="$(var.BuildDate)" />
 					<RegistryValue Type="string" Name="share_rdp" Value="" />
 
 					<!--$ArpStart$-->
+					<!--https://learn.microsoft.com/en-us/windows/win32/msi/property-reference-->
+					<RegistryValue Type="string" Name="DisplayName" Value="HanaDesk" />
+					<RegistryValue Type="string" Name="DisplayIcon" Value="[INSTALLFOLDER_INNER]HanaDesk.exe" />
+					<RegistryValue Type="string" Name="DisplayVersion" Value="1.3.6.28937399" />
+					<RegistryValue Type="string" Name="Publisher" Value="Hanasis" />
+					<RegistryValue Type="string" Name="InstallDate" Value="20250107" />
+					<RegistryValue Type="string" Name="InstallLocation" Value="[INSTALLFOLDER_INNER]" />
+					<RegistryValue Type="string" Name="InstallSource" Value="[InstallSource]" />
+					<RegistryValue Type="integer" Name="Language" Value="[ProductLanguage]" />
+					<RegistryValue Type="integer" Name="EstimatedSize" Value="65149739" />
+					<RegistryValue Type="expandable" Name="ModifyPath" Value="MsiExec.exe /X [ProductCode]" />
+					<RegistryValue Type="integer" Id="NoModify" Value="1" />
+					<RegistryValue Type="expandable" Name="UninstallString" Value="MsiExec.exe /X [ProductCode]" />
+					<RegistryValue Type="expandable" Name="QuietUninstallString" Value="MsiExec.exe /qn /X [ProductCode]" />
+					<RegistryValue Type="string" Name="Version" Value="1.3.6.28937399" />
+					<RegistryValue Type="integer" Name="VersionMajor" Value="1" />
+					<RegistryValue Type="integer" Name="VersionMinor" Value="3" />
+					<RegistryValue Type="integer" Name="VersionBuild" Value="6" />
+					<RegistryValue Type="integer" Name="WindowsInstaller" Value="1" />
+					<RegistryValue Type="string" Name="Comments" Value="!(loc.AR_Comment)" />
+					<RegistryValue Type="string" Name="Contact" Value="https://github.com/rustdesk/rustdesk" />
+					<RegistryValue Type="string" Name="HelpLink" Value="https://github.com/rustdesk/rustdesk/issues/" />
+					<RegistryValue Type="string" Name="ReadMe" Value="https://github.com/rustdesk/rustdesk" />
 					<!--$ArpEnd$-->
 				</RegistryKey>
 			</Component>

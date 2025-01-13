@@ -1,0 +1,401 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+	xmlns:fire="http://wixtoolset.org/schemas/v4/wxs/firewall">
+	<Fragment>
+
+		<?include ../Includes.wxi?>
+
+		<DirectoryRef Id="INSTALLFOLDER_INNER" FileSource="$(var.BuildDir)">
+			<Component Id="App.exe" Guid="9b28ee8e-2e41-43fb-a22c-fe9efcbeb951">
+				<File Id="App.exe" Name="$(var.Product).exe" KeyPath="yes" Checksum="yes">
+					<!--<fire:FirewallException Id="AppEx" Name="$(var.Product) Service" Scope="any" IgnoreFailure="yes" />-->
+				</File>
+			</Component>
+		</DirectoryRef>
+
+		<CustomAction Id="RemoveInstallFolder.SetParam" Return="check" Property="RemoveInstallFolder" Value="[INSTALLFOLDER_INNER]" />
+		<CustomAction Id="AddFirewallRules.SetParam" Return="check" Property="AddFirewallRules" Value="1[INSTALLFOLDER_INNER]$(var.Product).exe" />
+		<CustomAction Id="RemoveFirewallRules.SetParam" Return="check" Property="RemoveFirewallRules" Value="0[INSTALLFOLDER_INNER]$(var.Product).exe" />
+		<CustomAction Id="TryStopDeleteService.SetParam" Return="check" Property="TryStopDeleteService" Value="$(var.Product)" />
+
+		<CustomAction Id="LaunchApp" ExeCommand="" Return="asyncNoWait" FileRef="App.exe" />
+		<CustomAction Id="LaunchAppTray" ExeCommand=" --tray" Return="asyncNoWait" FileRef="App.exe" />
+		<Property Id="TerminateProcesses" Value="AppTest.exe" />
+		<CustomAction Id="TerminateProcesses.SetParam" Return="check" Property="TerminateProcesses" Value="$(var.Product).exe" />
+		<CustomAction Id="TerminateBrokers.SetParam" Return="check" Property="TerminateProcesses" Value="RuntimeBroker_rustdesk.exe" />
+		<CustomAction Id="SetPropertyIsServiceRunning.SetParam.AppName" Return="check" Property="AppName" Value="$(var.Product)" />
+		<CustomAction Id="SetPropertyIsServiceRunning.SetParam.PropertyName" Return="check" Property="PropertyName" Value="STOP_SERVICE" />
+		<CustomAction Id="SetPropertyServiceStop.SetParam.ConfigFile" Return="check" Property="ConfigFile" Value="[AppDataFolder]$(var.Product)\config\$(var.Product)2.toml" />
+		<CustomAction Id="SetPropertyServiceStop.SetParam.ConfigKey" Return="check" Property="ConfigKey" Value="stop-service" />
+		<CustomAction Id="SetPropertyServiceStop.SetParam.PropertyName" Return="check" Property="PropertyName" Value="STOP_SERVICE" />
+		<CustomAction Id="TryDeleteStartupShortcut.SetParam" Return="check" Property="ShortcutName" Value="$(var.Product) Tray" />
+		<CustomAction Id="RemoveAmyuniIdd.SetParam" Return="check" Property="RemoveAmyuniIdd" Value="[INSTALLFOLDER_INNER]" />
+		<InstallExecuteSequence>
+
+			<Custom Action="SetPropertyIsServiceRunning" After="InstallInitialize" Condition="Installed" />
+			<Custom Action="SetPropertyIsServiceRunning.SetParam.AppName" Before="SetPropertyIsServiceRunning" Condition="Installed" />
+			<Custom Action="SetPropertyIsServiceRunning.SetParam.PropertyName" Before="SetPropertyIsServiceRunning" Condition="Installed" />
+
+			<Custom Action="SetPropertyServiceStop" After="InstallInitialize" Condition="NOT Installed" />
+			<Custom Action="SetPropertyServiceStop.SetParam.ConfigFile" Before="SetPropertyServiceStop" Condition="NOT Installed" />
+			<Custom Action="SetPropertyServiceStop.SetParam.ConfigKey" Before="SetPropertyServiceStop" Condition="NOT Installed" />
+			<Custom Action="SetPropertyServiceStop.SetParam.PropertyName" Before="SetPropertyServiceStop" Condition="NOT Installed" />
+
+			<!-- Do not call CreateStartService if is uninstalling. -->
+			<!-- (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE) means uninstalling. -->
+			<Custom Action="CreateStartService" Before="InstallFinalize" Condition="(NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)) AND (NOT STOP_SERVICE=&quot;&apos;Y&apos;&quot;) AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)" />
+			<!-- <Custom Action="CreateStartService.SetParam" Before="CreateStartService" Condition="(NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)) AND (NOT STOP_SERVICE=&quot;&apos;Y&apos;&quot;) AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)" /> -->
+
+			<Custom Action="CustomActionHello" Before="InstallFinalize" />
+
+			<!--Shortcut is in InstallValidate section. So we just let it be created, then try delete if stopping service.-->
+			<Custom Action="TryDeleteStartupShortcut" After="InstallFinalize" Condition="STOP_SERVICE=&quot;&apos;Y&apos;&quot;" />
+			<Custom Action="TryDeleteStartupShortcut.SetParam" Before="SetPropertyIsServiceRunning" Condition="STOP_SERVICE=&quot;&apos;Y&apos;&quot;" />
+
+			<!-- Launch ClientLauncher if installing or already installed and not uninstalling -->
+			<Custom Action="LaunchApp" After="InstallFinalize" Condition="NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)"/>
+			<Custom Action="LaunchAppTray" After="InstallFinalize" Condition="(NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)) AND (NOT STOP_SERVICE=&quot;&apos;Y&apos;&quot;) AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)"/>
+
+			<!--Workaround of "fire:FirewallException". If Outbound="Yes" or Outbound="true", the following error occurs.-->
+			<!--ExecFirewallExceptions: Error 0x80070057: failed to add app to the authorized apps list-->
+			<Custom Action="AddFirewallRules" Before="InstallFinalize" Condition="NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)"/>
+			<Custom Action="AddFirewallRules.SetParam" Before="AddFirewallRules" Condition="NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)"/>
+
+			<Custom Action="AddRegSoftwareSASGeneration" Before="InstallFinalize" Condition="NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE) AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)"/>
+
+			<Custom Action="RemoveInstallFolder" Before="RemoveFiles"/>
+			<Custom Action="RemoveInstallFolder.SetParam" Before="RemoveInstallFolder"/>
+			<Custom Action="TryStopDeleteService" Before="RemoveInstallFolder.SetParam" />
+			<Custom Action="TryStopDeleteService.SetParam" Before="TryStopDeleteService" />
+
+			<Custom Action="RemoveFirewallRules" Before="RemoveFiles"/>
+			<Custom Action="RemoveFirewallRules.SetParam" Before="RemoveFirewallRules"/>
+
+			<Custom Action="TerminateProcesses" Before="RemoveInstallFolder"/>
+			<Custom Action="TerminateProcesses.SetParam" Before="TerminateProcesses"/>
+			<Custom Action="TerminateBrokers" Before="RemoveInstallFolder"/>
+			<Custom Action="TerminateBrokers.SetParam" Before="TerminateBrokers"/>
+			<Custom Action="RemoveAmyuniIdd" Before="RemoveInstallFolder"/>
+			<Custom Action="RemoveAmyuniIdd.SetParam" Before="RemoveAmyuniIdd"/>
+		</InstallExecuteSequence>
+
+		<!-- Shortcuts -->
+		<DirectoryRef Id="App.StartMenu">
+			<Component Id="App.StartMenu" Guid="a2e1791e-56de-4cb1-be35-4f9f0f59dc28">
+				<RegistryValue Root="HKCU" Key="Software\$(var.Product)" Name="App.StartMenu" Type="string" Value="1" KeyPath="yes" />
+				<RemoveFolder Id="Remove.App.StartMenu" On="uninstall" />
+			</Component>
+		</DirectoryRef>
+
+		<DirectoryRef Id="App.StartMenu">
+			<Component Id="App.StartMenu.Shortcut" Guid="d8f30e59-41f9-4970-8a48-26653cafa0d1" Condition="STARTMENUSHORTCUTS = 1 OR STARTMENUSHORTCUTS = &quot;Y&quot; OR STARTMENUSHORTCUTS = &quot;y&quot;">
+				<Shortcut Id="App.StartMenu.Shortcut" Name="!(loc.SC_Client)" Description="!(loc.SC_Client_Desc)" Target="[!App.exe]" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER_INNER" />
+				<!--
+					Fix ICE 38 by adding a dummy registry key that is the key for this shortcut.
+					https://learn.microsoft.com/en-us/windows/win32/msi/ice38
+				-->
+				<RegistryValue Root="HKCU" Key="Software\$(var.Product)" Name="App.StartMenu.Shortcut" Type="string" Value="1" KeyPath="yes" />
+			</Component>
+
+			<Component Id="App.StartMenu.ShortcutUninstall" Guid="36196b24-e5f3-4391-b415-961642a882ef" Condition="STARTMENUSHORTCUTS = 1 OR STARTMENUSHORTCUTS = &quot;Y&quot; OR STARTMENUSHORTCUTS = &quot;y&quot;">
+				<Shortcut Id="App.StartMenu.ShortcutUninstall" Name="!(loc.SC_Uninstall)" Description="!(loc.SC_Uninstall_Desc)" Target="[System6432Folder]msiexec.exe" Arguments="/x [ProductCode]" Icon="AppIcon" />
+				<RegistryValue Root="HKCU" Key="Software\$(var.Product)" Name="App.StartMenu.ShortcutUninstall" Type="string" Value="1" KeyPath="yes" />
+			</Component>
+		</DirectoryRef>
+		<StandardDirectory Id="DesktopFolder">
+			<Component Id="App.Desktop.Shortcut" Guid="323770d0-e719-483f-8914-89e019ac9d22" Condition="DESKTOPSHORTCUTS = 1 OR DESKTOPSHORTCUTS = &quot;Y&quot; OR DESKTOPSHORTCUTS = &quot;y&quot;">
+				<Shortcut Id="App.Desktop.Shortcut" Name="!(loc.SC_Client)" Description="!(loc.SC_Client_Desc)" Target="[!App.exe]" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER_INNER" />
+				<RegistryValue Root="HKCU" Key="Software\$(var.Product)" Name="App.Desktop.Shortcut" Type="string" Value="1" KeyPath="yes" />
+			</Component>
+		</StandardDirectory>
+		<StandardDirectory Id="StartupFolder">
+			<Component Id="App.StartupFolder.ShortcutTray" Guid="aefb328e-93e5-46e9-84a5-f54bfbfc5582" Condition="STARTUPSHORTCUTS = 1 AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)">
+				<Shortcut Id="App.StartupFolder.ShortcutTray" Name="!(loc.SC_Client_Tray)" Description="!(loc.SC_Client_Tray_Desc)" Target="[!App.exe]" Arguments="--tray" Icon="AppIcon" WorkingDirectory="INSTALLFOLDER_INNER" />
+				<RegistryValue Root="HKCU" Key="Software\$(var.Product)" Name="App.StartupFolder.ShortcutTray" Type="string" Value="1" KeyPath="yes" />
+			</Component>
+		</StandardDirectory>
+
+		<!--<DirectoryRef Id="INSTALLFOLDER_INNER">
+			<Component Id="App.UninstallShortcut" Guid="f9421e7a-733f-4ae0-801b-163e265d9c4d">
+				<Shortcut Id="App.UninstallShortcut" Name="!(loc.SC_Uninstall)" Description="!(loc.SC_Uninstall_Desc)" Target="[System6432Folder]msiexec.exe" Arguments="/x [ProductCode]" Icon="AppIcon" />
+			</Component>
+		</DirectoryRef>-->
+
+		<ComponentGroup Id="Components" Directory="INSTALLFOLDER_INNER">
+			<ComponentRef Id="App.exe" />
+			<ComponentRef Id="App.Desktop.Shortcut" />
+			<!--<ComponentRef Id="App.UninstallShortcut" />-->
+			<ComponentRef Id="App.StartMenu.Shortcut" />
+			<ComponentRef Id="App.StartMenu.ShortcutUninstall" />
+			<ComponentRef Id="App.StartupFolder.ShortcutTray" />
+
+			<!--$AutoComonentStart$-->
+			<Component Guid="d761dc90-4f8b-49aa-a86e-4f6bde445b74" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/desktop_drop_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="d12138ef-2b0b-4d8f-9bb7-a322938b7716" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/desktop_multi_window_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="df911099-0deb-426d-956e-a8302864cac2" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/dylib_virtual_display.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="d30d50ae-16d1-4ab8-94ee-03b9478f93a8" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/file_selector_windows_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="d97f992d-82ab-4799-b129-3cd46f4aac54" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/flutter_custom_cursor_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="364cd9ab-3904-42ca-99ba-1017e1884fdf" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/flutter_gpu_texture_renderer_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="63a4508e-a624-4c3d-807b-3db33f71d74d" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/flutter_windows.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="910c7754-a888-48df-bb37-89408dce1ab4" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/librustdesk.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="1db335a1-2908-4a87-8724-828a7da52133" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/screen_retriever_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="64c7dd12-9aa8-44dc-a521-21e7ce239a80" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/texture_rgba_renderer_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="eb684100-4ef2-4c7f-8392-b0b7bc5899d0" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/uni_links_desktop_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9e526b38-f23e-4ab7-bc8b-bdde70b1d66c" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/url_launcher_windows_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="ca975d7d-f51b-4719-a6c8-4a276aecadc0" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/window_manager_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="7e97e673-e2c6-446d-87ab-25935357c576" >
+				<File Source="C:/work/hanadesk/HanaDeskCS/window_size_plugin.dll" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="1d6d5f87-67f2-4397-971e-66c2bce6e996" Subdirectory="data">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/app.so" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="8b0e44d5-bc85-4d69-8e70-fc0109d32540" Subdirectory="data">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/icudtl.dat" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="b9dc6827-47ac-495e-b0d4-abe2a300a915" Subdirectory="data\flutter_assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/AssetManifest.bin" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="86189484-e12d-4a04-a133-982d07a9c876" Subdirectory="data\flutter_assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/AssetManifest.json" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="05ddab5c-96ae-4251-bd41-351d67007d6b" Subdirectory="data\flutter_assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/FontManifest.json" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="854b0859-559c-447e-b2a7-fa6fba91bfe2" Subdirectory="data\flutter_assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/NOTICES.Z" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="f87de057-d085-4654-9f0b-5feb7a50c1fe" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/actions.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9e05b12e-0af5-46c5-b3d0-fcb917d66f11" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/actions_mobile.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="156eb4cf-41dd-4f46-be7f-36828189a7d9" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/address_book.ttf" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="16a798cd-183f-48f7-81c4-cf4211453225" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/android.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="00286e14-eb1f-498a-8faf-73d264f3c7c7" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/arrow.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="83a47278-013f-43db-918f-0100c186b0e3" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-apple.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="4e17e0f4-4d7e-4f24-8631-d5d46c51bbf3" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-auth0.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="af195f19-42e1-42cf-8333-d4cbc13269ed" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-azure.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="769cda99-433a-42db-ade6-7df92f599986" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-default.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6b7636c0-b62e-4763-81e9-d899fa272420" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-facebook.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="605eb659-0e53-4a14-b1e4-a3bbb40beaa6" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-github.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="7d9cb5e0-5895-4a2c-8ccb-1bc9f0752c2e" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-gitlab.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9c63242f-5531-4d4e-8a47-3b7f51f22412" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-google.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="df7f3502-5a9d-4de1-be5d-92bca1478058" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/auth-okta.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6acf39cf-082e-49aa-a849-348bcd573658" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/call_end.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6fdf7899-071e-4ce8-afbe-2d5851aa2170" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/call_wait.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="d1c1dd97-ee36-4388-80b7-0624c0f28d0b" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/chat.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="f41fa815-e16c-48f8-93c0-e30117cfbb20" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/chat2.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="77abdfba-da42-48c8-aa30-7baecb9209db" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/checkbox-outline.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="0d2a23d6-4f96-40f7-bf1d-e0193c91a787" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/chevron_up_chevron_down.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="872a0a28-c479-4231-b32f-9b77b07f214c" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/close.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="044d406c-d7fa-4ffc-b4d2-1a4f162bbf11" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/display.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="38a0ec0a-9a0a-420b-b324-e729132c621a" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/dots.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="cc34a66e-5b46-4112-aafd-512e13cbb91f" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/file.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="35dd0422-ad5b-4c7c-8800-e11971ea2fda" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/file_transfer.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="4dddbc0f-98d0-47fb-b55d-af4673e6f69e" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/folder.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="be6229d6-5886-4ed7-8992-f07c99a3ddda" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/folder_new.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9df40f97-6a1a-423f-9955-11bd0a3a111c" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/fullscreen.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="13732787-b3ab-4a0a-aae2-b627b9a1de3e" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/fullscreen_exit.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="f3780bed-bf92-41a4-b559-461f8a2f5914" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/gestures.ttf" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="bb0ff3cd-43a7-4b8a-85c7-cc1361652c18" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/home.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="c9cd8605-e5c6-44ac-9b80-ea4d71c6c609" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/icon.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="69b8a3b2-6c36-41e4-8e55-226529c3306b" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/insecure.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="633562b2-aec5-48b6-a2eb-bc26b44b9e4e" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/insecure_relay.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="f0dfb4d3-dbd7-4f83-b912-24f1d51cd71c" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/kb_layout_iso.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="71a53604-d4a4-46b2-ba9c-1203630e6d94" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/kb_layout_not_iso.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="91a8d345-cbe7-48d9-9d09-1aa49b282d46" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/keyboard.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="cbdda00e-bcae-4b79-b3a4-41e6370df3c7" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/linux.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="5431e5bc-79fb-4cf1-a119-82f80b143e6b" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/logo.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="f6c754d4-7b33-405f-8623-c13a3bfcdc60" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/mac.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="2f20d483-77eb-486e-b010-895f296f5640" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/message_24dp_5F6368.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9ec09c40-ba40-4eb6-afe7-f89af0e0ddd5" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/peer_searchbar.ttf" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="b7254b31-b591-44ff-8738-c9fb146f184c" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/pinned.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="727da475-9ce4-4b34-b050-437f7d60bd8a" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/rec.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9b10fa6c-46ef-43d9-8c03-d44e3d2ad648" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/record_screen.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="925fac2d-9c06-4597-88ab-0607cc07d3e1" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/refresh.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="aa85d283-8ff4-4c43-9653-b85c79b69980" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/scam.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="55809c94-4438-4ac3-a297-f3750e0932a2" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/screen.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="40de2335-9edb-4173-9dee-864c249b02b9" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/search.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6337ecd2-379b-4c9f-b197-cc7e5af0cd6c" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/secure.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="13b1de8b-cfcb-47af-9a01-0d07b74c2d45" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/secure_relay.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="45b603ca-1c2b-441d-8b63-71b044fc052b" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/tabbar.ttf" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="c88594fd-afec-405c-8286-12bef308a058" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/transfer.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6ff531d5-0243-43ab-87f9-ff7d606cafe7" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/trash.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="9af33d6d-86ae-452d-81f0-8038d580ea34" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/unpinned.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="a04346ca-9cc4-41b7-ab2c-9588e33625f4" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/voice_call.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="eeecff0f-df18-4a28-96a5-6b0e7142cbd1" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/voice_call_waiting.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6e173550-45e4-4519-9371-04e969ff213e" Subdirectory="data\flutter_assets\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/assets/win.svg" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="876d9532-551e-450c-a9ee-b4ff630d0a8b" Subdirectory="data\flutter_assets\fonts">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/fonts/MaterialIcons-Regular.otf" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="e2af395b-2bc2-467d-ae17-36e5b3ddd5c2" Subdirectory="data\flutter_assets\shaders">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/shaders/ink_sparkle.frag" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="59523775-7e4b-4906-ad83-d46fedcc0889" Subdirectory="data\flutter_assets\packages\window_manager\images">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/window_manager/images/ic_chrome_close.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="58733671-0919-49cc-b687-f6750af9a9ab" Subdirectory="data\flutter_assets\packages\window_manager\images">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/window_manager/images/ic_chrome_maximize.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="6be45bef-55a1-414c-b637-0f292eda2f0c" Subdirectory="data\flutter_assets\packages\window_manager\images">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/window_manager/images/ic_chrome_minimize.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="7b1e1a1d-3389-45eb-a0fd-e373abcfe637" Subdirectory="data\flutter_assets\packages\window_manager\images">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/window_manager/images/ic_chrome_unmaximize.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="d88e9dd0-8ef5-474a-b378-1c3a93d6a1dc" Subdirectory="data\flutter_assets\packages\wakelock_plus\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/wakelock_plus/assets/no_sleep.js" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="40605ae8-8005-42d1-96ce-590d843756f9" Subdirectory="data\flutter_assets\packages\flex_color_picker\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/flex_color_picker/assets/opacity.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="72e330b9-7faa-4a76-823e-d1715cbb26fb" Subdirectory="data\flutter_assets\packages\dash_chat_2\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/dash_chat_2/assets/placeholder.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<Component Guid="785dfb1e-0eaa-4646-990a-503dc9299312" Subdirectory="data\flutter_assets\packages\dash_chat_2\assets">
+				<File Source="C:/work/hanadesk/HanaDeskCS/data/flutter_assets/packages/dash_chat_2/assets/profile_placeholder.png" KeyPath="yes" Checksum="yes" />
+			</Component>
+			<!--$AutoComponentEnd$-->
+
+		</ComponentGroup>
+
+	</Fragment>
+</Wix>

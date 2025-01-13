@@ -230,7 +230,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
           children.add(const _Account());
           break;
         case SettingsTabKey.about:
-          children.add(const _About());
+          children.add(const About());
           break;
       }
     }
@@ -264,7 +264,7 @@ class _DesktopSettingPageState extends State<DesktopSettingPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: _buildBlock(
         children: <Widget>[
           SizedBox(
@@ -607,6 +607,7 @@ class _GeneralState extends State<_General> {
       bool user_dir_exists = await Directory(user_dir).exists();
       bool root_dir_exists =
           showRootDir ? await Directory(root_dir).exists() : false;
+      // canLaunchUrl blocked on windows portable, user SYSTEM
       return {
         'user_dir': user_dir,
         'root_dir': root_dir,
@@ -1869,14 +1870,14 @@ class _PluginState extends State<_Plugin> {
   }
 }
 
-class _About extends StatefulWidget {
-  const _About({Key? key}) : super(key: key);
+class About extends StatefulWidget {
+  const About({Key? key}) : super(key: key);
 
   @override
-  State<_About> createState() => _AboutState();
+  State<About> createState() => _AboutState();
 }
 
-class _AboutState extends State<_About> {
+class _AboutState extends State<About> {
   @override
   Widget build(BuildContext context) {
     return futureBuilder(future: () async {
@@ -1918,16 +1919,16 @@ class _AboutState extends State<_About> {
                         .marginSymmetric(vertical: 4.0)),
               InkWell(
                   onTap: () {
-                    launchUrlString('https://rustdesk.com/privacy.html');
+                    launchUrlString('https://www.hanaesp.com');
                   },
-                  child: Text(
-                    translate('Privacy Statement'),
-                    style: linkStyle,
-                  ).marginSymmetric(vertical: 4.0)),
-              InkWell(
-                  onTap: () {
-                    launchUrlString('https://rustdesk.com');
-                  },
+                  //     child: Text(
+                  //       translate('Privacy Statement'),
+                  //       style: linkStyle,
+                  //     ).marginSymmetric(vertical: 4.0)),
+                  // InkWell(
+                  //     onTap: () {
+                  //       launchUrlString('https://rustdesk.com');
+                  //     },
                   child: Text(
                     translate('Website'),
                     style: linkStyle,
@@ -1947,12 +1948,12 @@ class _AboutState extends State<_About> {
                             'Copyright © ${DateTime.now().toString().substring(0, 4)} Purslane Ltd.\n$license',
                             style: const TextStyle(color: Colors.white),
                           ),
-                          Text(
-                            translate('Slogan_tip'),
-                            style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white),
-                          )
+                          // Text(
+                          //   translate('Slogan_tip'),
+                          //   style: TextStyle(
+                          //       fontWeight: FontWeight.w800,
+                          //       color: Colors.white),
+                          // )
                         ],
                       ),
                     ),
@@ -2170,7 +2171,7 @@ class _WaylandCardState extends State<WaylandCard> {
       showConfirmMsgBox,
       tip: 'clear_Wayland_screen_selection_tip',
       style: ButtonStyle(
-        backgroundColor: MaterialStateProperty.all<Color>(
+        backgroundColor: WidgetStateProperty.all<Color>(
             Theme.of(context).colorScheme.error.withOpacity(0.75)),
       ),
     );

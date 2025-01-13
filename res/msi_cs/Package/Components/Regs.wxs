@@ -1,0 +1,79 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+	xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+	<?include ../Includes.wxi?>
+
+	<Fragment>
+		<!-- Regs for shortcuts are defined in "Fragments/ShortcutProperties.wxs" -->
+		<!-- Component that persists the property values to the registry so they are available during an upgrade/modify -->
+		<DirectoryRef Id="INSTALLFOLDER_INNER">
+			<Component Id="Product.Registry.InstallFolder" Guid="a3ec6875-e2a5-49c3-a9c2-8642bc6ebae4">
+				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)">
+					<RegistryValue Type="string" Name="INSTALLFOLDER" Value="[INSTALLFOLDER_INNER]" />
+				</RegistryKey>
+			</Component>
+
+			<Component Id="Product.Registry.DefaultIcon" Guid="ca9ab4cd-f11b-4a18-948d-bacc5abe22a9">
+				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\DefaultIcon">
+					<RegistryValue Type="string" Value='"[INSTALLFOLDER_INNER]$(var.Product).exe",0' />
+				</RegistryKey>
+			</Component>
+
+			<Component Id="Product.Registry.CommandPlay" Guid="3ea0aeab-6f99-4ee6-a195-0369b9712f46">
+				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\shell" />
+				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\shell\open" />
+				<RegistryKey Root="HKCR" Key="$(var.RegKeyRoot)\shell\open\command">
+					<RegistryValue Type="string" Value='"[INSTALLFOLDER_INNER]$(var.Product).exe" --play "%1"' />
+				</RegistryKey>
+			</Component>
+
+			<Component Id="Product.Registry.URLProtocol" Guid="eacbc6b9-b1ef-481b-b8ed-9c53e9269a71">
+				<RegistryKey Root="HKCR" Key="$(var.ProductLower)">
+					<RegistryValue Type="string" Name="URL Protocol" Value="" />
+				</RegistryKey>
+			</Component>
+
+			<Component Id="Product.Registry.Command" Guid="991fb0be-ecc3-4f94-b779-fe1b587d7d54">
+				<RegistryKey Root="HKCR" Key="$(var.ProductLower)\shell" />
+				<RegistryKey Root="HKCR" Key="$(var.ProductLower)\shell\open" />
+				<RegistryKey Root="HKCR" Key="$(var.ProductLower)\shell\open\command">
+					<RegistryValue Type="string" Value='"[INSTALLFOLDER_INNER]$(var.Product).exe" "%1"' />
+				</RegistryKey>
+			</Component>
+
+			<!--For compatibility with registry values from previous versions-->
+			<Component Id="Product.Registry.UninstallApp" Guid="6d5e0ca2-1e5c-4c42-b88c-ffbde584161c">
+				<RegistryKey Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\$(var.Product)" >
+					<RegistryValue Type="string" Name="BuildDate" Value="$(var.BuildDate)" />
+					<RegistryValue Type="string" Name="share_rdp" Value="" />
+
+					<!--$ArpStart$-->
+					<!--https://learn.microsoft.com/en-us/windows/win32/msi/property-reference-->
+					<RegistryValue Type="string" Name="DisplayName" Value="HanaDesk" />
+					<RegistryValue Type="string" Name="DisplayIcon" Value="[INSTALLFOLDER_INNER]HanaDesk.exe" />
+					<RegistryValue Type="string" Name="DisplayVersion" Value="1.3.6.28937393" />
+					<RegistryValue Type="string" Name="Publisher" Value="Hanasis" />
+					<RegistryValue Type="string" Name="InstallDate" Value="20250107" />
+					<RegistryValue Type="string" Name="InstallLocation" Value="[INSTALLFOLDER_INNER]" />
+					<RegistryValue Type="string" Name="InstallSource" Value="[InstallSource]" />
+					<RegistryValue Type="integer" Name="Language" Value="[ProductLanguage]" />
+					<RegistryValue Type="integer" Name="EstimatedSize" Value="65952563" />
+					<RegistryValue Type="expandable" Name="ModifyPath" Value="MsiExec.exe /X [ProductCode]" />
+					<RegistryValue Type="integer" Id="NoModify" Value="1" />
+					<RegistryValue Type="expandable" Name="UninstallString" Value="MsiExec.exe /X [ProductCode]" />
+					<RegistryValue Type="expandable" Name="QuietUninstallString" Value="MsiExec.exe /qn /X [ProductCode]" />
+					<RegistryValue Type="string" Name="Version" Value="1.3.6.28937393" />
+					<RegistryValue Type="integer" Name="VersionMajor" Value="1" />
+					<RegistryValue Type="integer" Name="VersionMinor" Value="3" />
+					<RegistryValue Type="integer" Name="VersionBuild" Value="6" />
+					<RegistryValue Type="integer" Name="WindowsInstaller" Value="1" />
+					<RegistryValue Type="string" Name="Comments" Value="!(loc.AR_Comment)" />
+					<RegistryValue Type="string" Name="Contact" Value="https://github.com/rustdesk/rustdesk" />
+					<RegistryValue Type="string" Name="HelpLink" Value="https://github.com/rustdesk/rustdesk/issues/" />
+					<RegistryValue Type="string" Name="ReadMe" Value="https://github.com/rustdesk/rustdesk" />
+					<!--$ArpEnd$-->
+				</RegistryKey>
+			</Component>
+		</DirectoryRef>
+
+	</Fragment>
+</Wix>

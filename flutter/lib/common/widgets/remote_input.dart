@@ -339,9 +339,7 @@ class _RawTouchGestureDetectorRegionState
     if (isDesktop || isWebDesktop) {
       ffi.cursorModel.clearRemoteWindowCoords();
     }
-    if (handleTouch) {
-        await inputModel.sendMouse('up', MouseButtons.left);
-    }
+    await inputModel.sendMouse('up', MouseButtons.left);
   }
 
   // scale + pan event

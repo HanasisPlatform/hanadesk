@@ -1,7 +1,4 @@
-use std::{
-    collections::BTreeSet,
-    path::{Path, PathBuf},
-};
+use std::{collections::BTreeSet, path::PathBuf};
 
 use cacao::pasteboard::{Pasteboard, PasteboardName};
 use hbb_common::log;
@@ -33,7 +30,7 @@ pub struct NsPasteboard {
 }
 
 impl NsPasteboard {
-    pub fn new(ignore_path: &Path) -> Result<Self, CliprdrError> {
+    pub fn new(ignore_path: &PathBuf) -> Result<Self, CliprdrError> {
         Ok(Self {
             ignore_path: ignore_path.to_owned(),
             former_file_list: Mutex::new(vec![]),

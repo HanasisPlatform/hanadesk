@@ -237,9 +237,7 @@ prebuild)
 
 	# Install rust bridge generator
 
-	cargo install \
-		cargo-expand \
-		--locked
+	cargo install cargo-expand
 	cargo install flutter_rust_bridge_codegen \
 		--version "${FLUTTER_RUST_BRIDGE_VERSION}" \
 		--features "uuid" \

@@ -15,7 +15,7 @@ use shared_memory::*;
 use std::{
     mem::size_of,
     ops::{Deref, DerefMut},
-    path::Path,
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -92,7 +92,7 @@ impl SharedMemory {
             }
         };
         log::info!("Create shared memory, size: {}, flink: {}", size, flink);
-        set_path_permission(Path::new(&flink), "F").ok();
+        set_path_permission(&PathBuf::from(flink), "F").ok();
         Ok(SharedMemory { inner: shmem })
     }
 
@@ -586,8 +586,8 @@ pub mod client {
                 let mut exe = std::env::current_exe()?.to_string_lossy().to_string();
                 #[cfg(feature = "flutter")]
                 {
-                    if let Some(dir) = Path::new(&exe).parent() {
-                        if set_path_permission(Path::new(dir), "RX").is_err() {
+                    if let Some(dir) = PathBuf::from(&exe).parent() {
+                        if set_path_permission(&PathBuf::from(dir), "RX").is_err() {
                             *SHMEM.lock().unwrap() = None;
                             bail!("Failed to set permission of {:?}", dir);
                         }
@@ -602,7 +602,7 @@ pub mod client {
                             .join("Local")
                             .join("rustdesk-sciter");
                         if std::fs::create_dir_all(&dir).is_ok() {
-                            let dst = dir.join("rustdesk.exe");
+                            let dst = dir.join("hanadesk.exe");
                             if std::fs::copy(&exe, &dst).is_ok() {
                                 if dst.exists() {
                                     if set_path_permission(&dir, "RX").is_ok() {
