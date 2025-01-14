@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
+
+	<!--$PreVarsStart$-->
+	<?define Version="1.3.6.28937393" ?>
+	<?define Manufacturer="Hanasis" ?>
+	<?define Product="HanaDesk" ?>
+	<?define Description="HanaDesk Installer" ?>
+	<?define ProductLower="hanadesk" ?>
+	<?define RegKeyRoot=".$(var.ProductLower)" ?>
+	<?define RegKeyInstall="$(var.RegKeyRoot)\Install" ?>
+	<?define BuildDir="C:\work\hanadesk\HanaDeskCS" ?>
+	<?define BuildDate="2025-01-07 18:54" ?>
+
+	<!-- The UpgradeCode must be consistent for each product. ! -->
+	<?define UpgradeCode = "1fc78b71-8f75-526f-b5b2-9732aa22ecc8" ?>
+	<?define Version="1.3.6.28937393" ?>
+	<?define Manufacturer="Hanasis" ?>
+	<?define Product="HanaDesk" ?>
+	<?define Description="HanaDesk Installer" ?>
+	<?define ProductLower="hanadesk" ?>
+	<?define RegKeyRoot=".$(var.ProductLower)" ?>
+	<?define RegKeyInstall="$(var.RegKeyRoot)\Install" ?>
+	<?define BuildDir="C:\work\hanadesk\HanaDeskCS" ?>
+	<?define BuildDate="2025-01-07 18:54" ?>
+
+	<!-- The UpgradeCode must be consistent for each product. ! -->
+	<?define UpgradeCode = "1fc78b71-8f75-526f-b5b2-9732aa22ecc8" ?>
+	<!--$PreVarsEnd$-->
+
+</Include>

@@ -26,6 +26,8 @@ import 'consts.dart';
 import 'mobile/pages/home_page.dart';
 import 'mobile/pages/server_page.dart';
 import 'models/platform_model.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_hbb/flavors.dart' as flvr;
 
 import 'package:flutter_hbb/plugin/handlers.dart'
     if (dart.library.html) 'package:flutter_hbb/web/plugin/handlers.dart';
@@ -34,6 +36,8 @@ import 'package:flutter_hbb/plugin/handlers.dart'
 int? kWindowId;
 WindowType? kWindowType;
 late List<String> kBootArgs;
+
+const String flavor = String.fromEnvironment("FLAVOR", defaultValue: "member");
 
 Future<void> main(List<String> args) async {
   earlyAssert();
@@ -123,17 +127,30 @@ void runMainApp(bool startService) async {
   checkUpdate();
   // trigger connection status updater
   await bind.mainCheckConnectStatus();
+
+  await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
+
   if (startService) {
-    gFFI.serverModel.startService();
+    await gFFI.serverModel.startService();
     bind.pluginSyncUi(syncTo: kAppTypeMain);
     bind.pluginListReload();
   }
-  await Future.wait([gFFI.abModel.loadCache(), gFFI.groupModel.loadCache()]);
+
   gFFI.userModel.refreshCurrentUser();
+
   runApp(App());
 
   // Set window option.
-  WindowOptions windowOptions = getHiddenTitleBarWindowOptions();
+  WindowOptions windowOptions = WindowOptions(
+    size: flavor == flvr.Flavor.member.name
+        ? Size(400, 300)
+        : Size(800, 600), // 원하는 크기로 설정
+    center: true,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.hidden,
+    windowButtonVisibility: false, // 시스템 버튼을 숨김
+  );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     // Restore the location of the main window before window hide or show.
     await restoreWindowPosition(WindowType.Main);
@@ -153,6 +170,34 @@ void runMainApp(bool startService) async {
     // Do not use `windowManager.setResizable()` here.
     setResizable(!bind.isIncomingOnly());
   });
+
+  await dotenv.load(fileName: ".env");
+
+  String? idServer = dotenv.env['ID_SERVER'];
+  String? key = dotenv.env['KEY'];
+
+  if (idServer != null && key != null) {
+    await setServerConfig(
+      null,
+      null,
+      ServerConfig(
+        idServer: idServer,
+        relayServer: idServer,
+        key: key,
+      ),
+    );
+  }
+
+  if (flvr.F.appFlavor == flvr.Flavor.member) {
+    await gFFI.serverModel.setApproveMode('click');
+  }
+
+  final svcStopped = Get.find<RxBool>(tag: 'stop-service');
+  debugPrint('stop-service: ${svcStopped.value}');
+
+  if (svcStopped.value) {
+    await start_service(true);
+  }
 }
 
 void runMobileApp() async {

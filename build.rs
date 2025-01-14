@@ -32,7 +32,11 @@ fn build_manifest() {
                 winapi::um::winnt::LANG_ENGLISH,
                 winapi::um::winnt::SUBLANG_ENGLISH_US,
             ))
-            .set_manifest_file("res/manifest.xml");
+            .set_manifest_file("res/manifest.xml")
+            .set("FileDescription", "HanaDesk")
+            .set("ProductName", "HanaDesk")
+            .set("OriginalFilename", "hanadesk.exe")
+            .set("LegalCopyright", "Copyright 2024 HanaDesk");
         match res.compile() {
             Err(e) => {
                 write!(std::io::stderr(), "{}", e).unwrap();

@@ -3,6 +3,8 @@
 .vscode
 .idea
 .DS_Store
+*.msi
+*.exe
 libsciter-gtk.so
 src/ui/inline.rs
 extractor
@@ -55,3 +57,9 @@ vcpkg_installed
 flutter/lib/generated_plugin_registrant.dart
 libsciter.dylib
 flutter/web/
+.env
+
+*.msi
+
+/HanaDesk
+/HanaDeskCS

@@ -1,0 +1,20 @@
+package_rename_config:
+  # android:
+  #   app_name: "HanaDesk"
+  #   package_name: "com.hanasis.hanadesk"
+
+  # ios:
+  #   app_name: "HanaDesk"
+  #   bundle_name: "com.hanasis.hanadesk"
+  #   package_name: "HanaDesk"
+
+  macos:
+    app_name: HanaDesk
+    package_name: com.hanasis.hanadesk
+    copyright_notice: Copyright © 2024 Purslane Ltd. All rights reserved.
+
+  windows:
+    app_name: HanaDesk
+    organization: Hanasis
+    copyright_notice: Copyright © 2024 Purslane Ltd. All rights reserved.
+    exe_name: hanadesk
