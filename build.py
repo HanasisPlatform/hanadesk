@@ -606,8 +606,8 @@ def build_flutter_windows(version, features, skip_portable_pack, args):
         f"{flutter_build_dir}rustdesk.exe",
         f"{flutter_build_dir}HanaDesk.exe",
     )
-
-    sign_with_safenet(f"{flutter_build_dir}HanaDesk.exe")
+    if args.sign:
+        sign_with_safenet(f"{flutter_build_dir}HanaDesk.exe")
 
     os.chdir("..")
     shutil.copy2("target/release/deps/dylib_virtual_display.dll", flutter_build_dir_2)
