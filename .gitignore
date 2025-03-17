@@ -63,3 +63,6 @@ flutter/web/
 
 /HanaDesk
 /HanaDeskCS
+
+# FVM Version Cache
+.fvm/
