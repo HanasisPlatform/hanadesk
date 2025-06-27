@@ -251,6 +251,115 @@ cargo build --release --features flutter
 ./build_msi.sh <version> --version-up --sign
 ```
 
+## 🛡️ 윈도우 서비스 설정
+
+### 개발 환경에서 서비스 비활성화
+
+현재 개발 버전에서는 **윈도우 서비스로 자동 실행되지 않도록** 관련 코드들이 주석처리되어 있습니다.
+
+#### 주석처리된 서비스 관련 코드 위치:
+
+##### 1. **MSI CustomActions 서비스 생성/시작 코드 주석처리**
+**파일**: `res/msi/CustomActions/CustomActions.cpp` (753-810줄)
+
+```cpp
+// TryCreateStartServiceByShell 함수에서 서비스 생성 명령어 주석처리됨
+// hr = StringCchPrintfW(szCmd, cchCmd, L"create %ls binpath= \"%ls\" start= demand DisplayName= \"%ls\"", 
+//                       svcName, szNewBin, szSvcDisplayName);
+// hi = ShellExecuteW(NULL, L"open", L"sc", szCmd, NULL, SW_HIDE);
+
+// 서비스 시작 명령어도 주석처리됨  
+// hr = StringCchPrintfW(szCmd, cchCmd, L"/c sc start %ls", svcName);
+// hi = ShellExecuteW(NULL, L"open", L"cmd.exe", szCmd, NULL, SW_HIDE);
+```
+
+##### 2. **Rust 윈도우 플랫폼 서비스 코드 비활성화**
+**파일**: `src/platform/windows.rs` (2260-2285줄)
+
+```rust
+// 서비스 설치 함수 주석처리됨
+// pub fn install_service() -> ResultType<()> {
+//     let cmd = std::env::current_exe()?;
+//     let args = vec!["--service"];
+//     // ... 서비스 설치 로직
+// }
+
+// 서비스 제거 함수도 주석처리됨
+// pub fn uninstall_service() -> ResultType<()> {
+//     // ... 서비스 제거 로직  
+// }
+```
+
+##### 3. **WiX 설치 패키지 서비스 관련 주석처리**
+**파일**: `res/msi/Package/Components/RustDesk.wxs` (9줄, 46줄)
+
+```xml
+<!-- 방화벽 예외 주석처리됨 -->
+<!--<fire:FirewallException Id="AppEx" Name="$(var.Product) Service" Scope="any" IgnoreFailure="yes" />-->
+
+<!-- 서비스 생성 및 시작 커스텀 액션 매개변수 설정 주석처리됨 -->
+<!-- <Custom Action="CreateStartService.SetParam" Before="CreateStartService" 
+         Condition="(NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)) AND (NOT STOP_SERVICE=&quot;&apos;Y&apos;&quot;) AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)" /> -->
+```
+
+##### 4. **ServiceUtils.cpp 서비스 생성 함수**
+**파일**: `res/msi/CustomActions/ServiceUtils.cpp`
+
+```cpp
+// 서비스 생성 함수는 구현되어 있지만 CustomActions.cpp에서 호출이 주석처리됨
+bool MyCreateServiceW(LPCWSTR serviceName, LPCWSTR displayName, LPCWSTR binaryPath)
+{
+    // SERVICE_AUTO_START로 설정되어 있어 활성화 시 자동 시작됨
+    schService = CreateServiceW(
+        schSCManager,              // SCM database 
+        serviceName,               // name of service 
+        displayName,               // service name to display 
+        SERVICE_ALL_ACCESS,        // desired access 
+        SERVICE_WIN32_OWN_PROCESS, // service type 
+        SERVICE_AUTO_START,        // start type (자동 시작)
+        SERVICE_ERROR_NORMAL,      // error control type 
+        binaryPath,                // path to service's binary 
+        // ...
+    );
+}
+```
+
+### 서비스 활성화 방법 (필요시)
+
+#### 1. **MSI CustomActions 서비스 생성/시작 코드 활성화**
+```cpp
+// res/msi/CustomActions/CustomActions.cpp의 TryCreateStartServiceByShell 함수에서 주석 제거
+hr = StringCchPrintfW(szCmd, cchCmd, L"create %ls binpath= \"%ls\" start= demand DisplayName= \"%ls\"", 
+                      svcName, szNewBin, szSvcDisplayName);
+hi = ShellExecuteW(NULL, L"open", L"sc", szCmd, NULL, SW_HIDE);
+
+// 서비스 시작 코드도 활성화
+hr = StringCchPrintfW(szCmd, cchCmd, L"/c sc start %ls", svcName);
+hi = ShellExecuteW(NULL, L"open", L"cmd.exe", szCmd, NULL, SW_HIDE);
+```
+
+#### 2. **Rust 서비스 함수 활성화**
+```rust
+// src/platform/windows.rs에서 주석 제거
+pub fn install_service() -> ResultType<()> {
+    // 서비스 설치 로직 구현
+}
+
+pub fn uninstall_service() -> ResultType<()> {
+    // 서비스 제거 로직 구현
+}
+```
+
+#### 3. **WiX 방화벽 예외 및 서비스 액션 활성화**
+```xml
+<!-- res/msi/Package/Components/RustDesk.wxs에서 주석 제거 -->
+<!-- 방화벽 예외 활성화 -->
+<fire:FirewallException Id="AppEx" Name="$(var.Product) Service" Scope="any" IgnoreFailure="yes" />
+
+<!-- 서비스 생성 및 시작 커스텀 액션 활성화 -->
+<Custom Action="CreateStartService.SetParam" Before="CreateStartService" 
+        Condition="(NOT (Installed AND REMOVE AND NOT UPGRADINGPRODUCTCODE)) AND (NOT STOP_SERVICE=&quot;&apos;Y&apos;&quot;) AND (NOT CC_CONNECTION_TYPE=&quot;outgoing&quot;)" />
+```
 ## ⚠️ 문제 해결
 
 ### 일반적인 오류 및 해결책
